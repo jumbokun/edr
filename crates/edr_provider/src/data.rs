@@ -925,9 +925,7 @@ where
             .blockchain
             .logs(
                 criteria.from_block,
-                criteria
-                    .to_block
-                    .unwrap_or(self.blockchain.last_block_number()),
+                self.last_block_number_for_logs(criteria.to_block),
                 &criteria.addresses,
                 &criteria.normalized_topics,
             )?
@@ -1074,13 +1072,23 @@ where
         self.blockchain
             .logs(
                 filter.from_block,
-                filter
-                    .to_block
-                    .unwrap_or(self.blockchain.last_block_number()),
+                self.last_block_number_for_logs(filter.to_block),
                 &filter.addresses,
                 &filter.normalized_topics,
             )
             .map_err(ProviderError::Blockchain)
+    }
+
+    /// Returns the last block a log query ending at `to_block` needs to scan.
+    ///
+    /// Blocks past the chain head don't exist yet, so the range is capped
+    /// there. `to_block` comes straight from the request and can be as large as
+    /// `u64::MAX`, and the blockchain visits every block number in the range.
+    fn last_block_number_for_logs(&self, to_block: Option<u64>) -> u64 {
+        let last_block_number = self.blockchain.last_block_number();
+        to_block.map_or(last_block_number, |to_block| {
+            to_block.min(last_block_number)
+        })
     }
 
     pub fn set_account_storage_slot(

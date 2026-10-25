@@ -29,6 +29,7 @@ mod event_loop;
 mod hardhat_request_serialization;
 mod interval_mining;
 mod issues;
+mod logs_past_chain_head;
 mod rip7212;
 mod solx_stack_trace;
 mod timestamp;
