@@ -28,7 +28,7 @@ pub fn handle_get_filter_changes_request<
 }
 
 pub fn handle_get_filter_logs_request<
-    ChainSpecT: ProviderSpec<TimerT>,
+    ChainSpecT: SyncProviderSpec<TimerT>,
     TimerT: Clone + TimeSinceEpoch,
 >(
     data: &mut ProviderData<ChainSpecT, TimerT>,

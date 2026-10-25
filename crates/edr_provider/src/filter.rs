@@ -58,12 +58,16 @@ impl Filter {
         self.data.take_events()
     }
 
-    /// Take log events from the filter if the filter is a log events filter.
-    pub fn take_log_events(&mut self) -> Option<Vec<LogOutput>> {
-        match &mut self.data {
-            FilterData::Logs { logs, .. } => {
+    /// Returns the criteria of a log filter, or `None` for other filters.
+    ///
+    /// Unlike [`Self::take_events`], this leaves the pending logs in place, but
+    /// it also extends the filter's deadline.
+    pub fn log_criteria(&mut self) -> Option<LogFilter> {
+        match &self.data {
+            FilterData::Logs { criteria, .. } => {
+                let criteria = criteria.clone();
                 self.deadline = new_filter_deadline();
-                Some(std::mem::take(logs))
+                Some(criteria)
             }
             _ => None,
         }

@@ -633,26 +633,6 @@ where
     ChainSpecT: ProviderSpec<TimerT>,
     TimerT: Clone + TimeSinceEpoch,
 {
-    pub fn get_filter_logs(
-        &mut self,
-        filter_id: &U256,
-    ) -> Result<Option<Vec<LogOutput>>, ProviderErrorForChainSpec<ChainSpecT>> {
-        self.filters
-            .get_mut(filter_id)
-            .map(|filter| {
-                if let Some(events) = filter.take_log_events() {
-                    Ok(events)
-                } else {
-                    Err(ProviderError::InvalidFilterSubscriptionType {
-                        filter_id: *filter_id,
-                        expected: SubscriptionType::Logs,
-                        actual: filter.data.subscription_type(),
-                    })
-                }
-            })
-            .transpose()
-    }
-
     pub fn revert_to_snapshot(&mut self, snapshot_id: u64) -> bool {
         // Ensure that, if the snapshot exists, we also remove all subsequent snapshots,
         // as they can only be used once in Ganache.
@@ -1065,6 +1045,29 @@ where
             // We return a hardcoded value for networks without EIP-1559
             Ok(PRE_EIP_1559_GAS_PRICE)
         }
+    }
+
+    /// Returns all logs matching the filter, not just those since the last
+    /// poll. The query is re-run, so this doesn't consume the logs that
+    /// `eth_getFilterChanges` returns.
+    pub fn get_filter_logs(
+        &mut self,
+        filter_id: &U256,
+    ) -> Result<Option<Vec<LogOutput>>, ProviderErrorForChainSpec<ChainSpecT>> {
+        let Some(filter) = self.filters.get_mut(filter_id) else {
+            return Ok(None);
+        };
+
+        let Some(criteria) = filter.log_criteria() else {
+            return Err(ProviderError::InvalidFilterSubscriptionType {
+                filter_id: *filter_id,
+                expected: SubscriptionType::Logs,
+                actual: filter.data.subscription_type(),
+            });
+        };
+
+        let logs = self.logs(criteria)?.iter().map(LogOutput::from).collect();
+        Ok(Some(logs))
     }
 
     pub fn logs(
