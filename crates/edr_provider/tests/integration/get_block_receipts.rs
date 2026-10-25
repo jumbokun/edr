@@ -88,6 +88,11 @@ async fn returns_the_receipt_of_each_transaction_in_the_block() -> anyhow::Resul
 
     assert_eq!(receipts_by_hash, receipts);
 
+    // The execution-apis tests pass the hash as a bare string.
+    let json = format!(r#"{{"method":"eth_getBlockReceipts","params":["{block_hash}"]}}"#);
+    let request: MethodInvocation<L1ChainSpec> = serde_json::from_str(&json)?;
+    assert_eq!(fixture.request(request)?, receipts);
+
     Ok(())
 }
 
@@ -116,6 +121,13 @@ async fn returns_null_for_an_unknown_block() -> anyhow::Result<()> {
         },
     )))?;
     assert_eq!(by_hash, Value::Null);
+
+    let json = format!(
+        r#"{{"method":"eth_getBlockReceipts","params":["{}"]}}"#,
+        B256::ZERO
+    );
+    let request: MethodInvocation<L1ChainSpec> = serde_json::from_str(&json)?;
+    assert_eq!(fixture.request(request)?, Value::Null);
 
     Ok(())
 }

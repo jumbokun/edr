@@ -210,7 +210,17 @@ impl<'de> serde::de::Deserialize<'de> for BlockSpec {
             where
                 E: serde::de::Error,
             {
-                let result = if v.starts_with("0x") {
+                // A bare 32-byte hash, which the execution API accepts wherever
+                // a block can be given by hash (`BlockNumberOrTagOrHash`).
+                let result = if v.len() == 66 && v.starts_with("0x") {
+                    let block_hash: B256 = serde::de::Deserialize::deserialize(
+                        serde::de::value::StrDeserializer::new(v),
+                    )?;
+                    BlockSpec::Eip1898(Eip1898BlockSpec::Hash {
+                        block_hash,
+                        require_canonical: None,
+                    })
+                } else if v.starts_with("0x") {
                     let number: U64 = serde::de::Deserialize::deserialize(
                         serde::de::value::StrDeserializer::new(v),
                     )?;
@@ -342,6 +352,27 @@ mod tests {
         help_test_block_spec_serde(BlockSpec::Eip1898(Eip1898BlockSpec::Number {
             block_number: 1,
         }));
+    }
+
+    #[test]
+    fn test_block_spec_bare_block_hash_deserialization() {
+        let block_hash = B256::from(U256::from(1));
+
+        let block_spec: BlockSpec = serde_json::from_value(json!(block_hash)).unwrap();
+        assert_eq!(
+            block_spec,
+            BlockSpec::Eip1898(Eip1898BlockSpec::Hash {
+                block_hash,
+                require_canonical: None,
+            })
+        );
+
+        // Shorter hex strings are still block numbers.
+        let block_spec: BlockSpec = serde_json::from_value(json!("0x3d")).unwrap();
+        assert_eq!(block_spec, BlockSpec::Number(0x3d));
+
+        let invalid_hash = format!("0x{}", "z".repeat(64));
+        assert!(serde_json::from_value::<BlockSpec>(json!(invalid_hash)).is_err());
     }
 
     #[test]
