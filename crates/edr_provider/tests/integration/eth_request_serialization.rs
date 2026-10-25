@@ -5,7 +5,7 @@ use edr_chain_l1::{
 };
 use edr_eth::{
     filter::{LogFilterOptions, LogOutput, OneOrMore},
-    Blob, BlockSpec, BlockTag, PreEip1898BlockSpec,
+    Blob, BlockSpec, BlockTag, Eip1898BlockSpec, PreEip1898BlockSpec,
 };
 use edr_primitives::{Address, Bytes, B256, U160, U256};
 use edr_provider::{IntervalConfigRequest, MethodInvocation, Timestamp};
@@ -157,6 +157,22 @@ fn test_serde_eth_get_block_by_hash() {
     help_test_method_invocation_serde(MethodInvocation::<L1ChainSpec>::GetBlockByHash(
         B256::from(U256::from(1)),
         true,
+    ));
+}
+
+#[test]
+fn test_serde_eth_get_block_receipts() {
+    help_test_method_invocation_serde(MethodInvocation::<L1ChainSpec>::GetBlockReceipts(
+        BlockSpec::Number(100),
+    ));
+    help_test_method_invocation_serde(MethodInvocation::<L1ChainSpec>::GetBlockReceipts(
+        BlockSpec::latest(),
+    ));
+    help_test_method_invocation_serde(MethodInvocation::<L1ChainSpec>::GetBlockReceipts(
+        BlockSpec::Eip1898(Eip1898BlockSpec::Hash {
+            block_hash: B256::from(U256::from(1)),
+            require_canonical: Some(true),
+        }),
     ));
 }
 

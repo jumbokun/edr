@@ -1,7 +1,7 @@
 use core::fmt::Debug;
 use std::sync::Arc;
 
-use edr_block_api::Block as _;
+use edr_block_api::{Block as _, FetchBlockReceipts as _};
 use edr_block_header::Withdrawal;
 use edr_chain_l1::rpc::block::L1RpcBlock;
 use edr_chain_spec::{ExecutableTransaction as _, TransactionValidation};
@@ -89,6 +89,30 @@ pub fn handle_get_block_by_number_request<
             },
         )
         .transpose()
+}
+
+pub fn handle_get_block_receipts_request<
+    ChainSpecT: SyncProviderSpec<
+        TimerT,
+        SignedTransaction: Default + TransactionValidation<ValidationError: PartialEq>,
+    >,
+    TimerT: Clone + TimeSinceEpoch,
+>(
+    data: &mut ProviderData<ChainSpecT, TimerT>,
+    block_spec: BlockSpec,
+) -> Result<Option<Vec<ChainSpecT::RpcReceipt>>, ProviderErrorForChainSpec<ChainSpecT>> {
+    let Some(BlockByNumberResult { block, .. }) = block_by_number(data, &block_spec)? else {
+        return Ok(None);
+    };
+
+    let receipts = block
+        .fetch_transaction_receipts()
+        .map_err(ProviderError::FetchReceipt)?
+        .iter()
+        .map(|receipt| ChainSpecT::RpcReceipt::rpc_type_from(receipt, data.hardfork()))
+        .collect();
+
+    Ok(Some(receipts))
 }
 
 pub fn handle_get_block_transaction_count_by_hash_request<

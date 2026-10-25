@@ -437,6 +437,52 @@ pub enum MethodInvocation<ChainSpecT: RpcChainSpec> {
         /// `false`, returns only transaction hashes.
         bool,
     ),
+    /// # `eth_getBlockReceipts`
+    ///
+    /// Returns the receipts of all transactions in the block identified by the
+    /// provided block number, tag or hash.
+    ///
+    /// ## Result
+    ///
+    /// `Array|null` - Receipt objects in transaction order, as returned by
+    /// `eth_getTransactionReceipt`, or `null` if the block was not found.
+    ///
+    /// ## Example
+    ///
+    /// **Request:**
+    ///
+    /// ```json
+    /// {
+    ///   "params": ["0x1"]
+    /// }
+    /// ```
+    ///
+    /// **Response:**
+    ///
+    /// ```json
+    /// [
+    ///   {
+    ///     "transactionHash": "0xabc...",
+    ///     "blockNumber": "0x1",
+    ///     "status": "0x1",
+    ///     ...
+    ///   }
+    /// ]
+    /// ```
+    ///
+    /// ## Implementation details
+    ///
+    /// - Post-merge block tags (`"safe"`, `"finalized"`) are only available for
+    ///   the merge hardfork and later.
+    /// - `"pending"` returns the receipts of the block that would be mined
+    ///   next, like `eth_getBlockByNumber` does.
+    #[serde(rename = "eth_getBlockReceipts", with = "edr_eth::serde::sequence")]
+    GetBlockReceipts(
+        /// `BlockSpec` - Block number, tag (`"latest"`, `"earliest"`,
+        /// `"pending"`, `"safe"`, `"finalized"`), or EIP-1898 block
+        /// specifier.
+        BlockSpec,
+    ),
     /// # `eth_getBlockTransactionCountByHash`
     ///
     /// Returns the number of transactions in the block identified by the
@@ -2336,6 +2382,7 @@ impl<ChainSpecT: RpcChainSpec> MethodInvocation<ChainSpecT> {
             MethodInvocation::GetBalance(_, _) => "eth_getBalance",
             MethodInvocation::GetBlockByNumber(_, _) => "eth_getBlockByNumber",
             MethodInvocation::GetBlockByHash(_, _) => "eth_getBlockByHash",
+            MethodInvocation::GetBlockReceipts(_) => "eth_getBlockReceipts",
             MethodInvocation::GetBlockTransactionCountByHash(_) => {
                 "eth_getBlockTransactionCountByHash"
             }

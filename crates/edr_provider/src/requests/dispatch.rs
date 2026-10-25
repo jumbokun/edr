@@ -196,6 +196,10 @@ where
             eth::handle_get_block_by_hash_request(data, block_hash, transaction_detail_flag)
                 .and_then(to_json::<_, ChainSpecT, TimerT>)
         }
+        MethodInvocation::GetBlockReceipts(block_spec) => {
+            eth::handle_get_block_receipts_request(data, block_spec)
+                .and_then(to_json::<_, ChainSpecT, TimerT>)
+        }
         MethodInvocation::GetBlockTransactionCountByHash(block_hash) => {
             eth::handle_get_block_transaction_count_by_hash_request(data, block_hash)
                 .and_then(to_json::<_, ChainSpecT, TimerT>)
