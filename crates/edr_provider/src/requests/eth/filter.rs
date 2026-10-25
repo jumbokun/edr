@@ -211,9 +211,10 @@ fn validate_filter_criteria<
         topics
             .into_iter()
             .map(|topics| {
-                topics.map(|topics| match topics {
-                    OneOrMore::One(topic) => vec![topic],
-                    OneOrMore::Many(topics) => topics,
+                topics.and_then(|topics| match topics {
+                    OneOrMore::One(topic) => Some(vec![topic]),
+                    // An empty list of alternatives is a wildcard, the same as `null`.
+                    OneOrMore::Many(topics) => (!topics.is_empty()).then_some(topics),
                 })
             })
             .collect()

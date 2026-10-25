@@ -32,3 +32,4 @@ mod issues;
 mod rip7212;
 mod solx_stack_trace;
 mod timestamp;
+mod topic_wildcard;
